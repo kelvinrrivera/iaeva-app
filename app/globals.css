@@ -1,0 +1,409 @@
+@import "tailwindcss";
+
+@theme {
+  /* Luxury Tech Color System */
+  --color-background: #F5F7FA;
+  --color-foreground: #1C1F26;
+  --color-primary: #0E2A47;
+  --color-primary-dark: #091C2E;
+  --color-accent: #A61E2E;
+  --color-accent-hover: #8B1826;
+  --color-charcoal: #1C1F26;
+  --color-ui: #F5F7FA;
+
+  /* Standard Tailwind variables */
+  --color-border: #E5E7EB;
+  --color-input: #E5E7EB;
+  --color-ring: #0E2A47;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1C1F26;
+  --color-muted: #F5F7FA;
+  --color-muted-foreground: #4B5563;
+  --color-destructive: #EF4444;
+  --color-destructive-foreground: #FFFFFF;
+  --color-popover: #FFFFFF;
+  --color-popover-foreground: #1C1F26;
+  --color-secondary: #F5F7FA;
+  --color-secondary-foreground: #1C1F26;
+
+  /* Radius - standardized to 16px */
+  --radius: 1rem;
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  :root {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    font-family: var(--font-inter), system-ui, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Glassmorphism - Subtle */
+.glass {
+  @apply bg-white/70 backdrop-blur-md border border-black/5 shadow-sm;
+}
+
+.glass-dark {
+  @apply bg-white/40 backdrop-blur-md border border-black/10;
+}
+
+/* ==========================================
+   LUXURY TECH ANIMATIONS
+   ========================================== */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Animation utilities */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out;
+}
+
+/* Enhanced focus states - softened for premium feel */
+*:focus-visible {
+  outline: 2px solid rgba(14, 42, 71, 0.45);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Skip to content link — visible only on focus */
+.skip-to-content {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.5rem 1rem;
+  background: #0E2A47;
+  color: white;
+  font-size: 0.875rem;
+  font-weight: 700;
+  border-radius: 0 0 0.5rem 0.5rem;
+  text-decoration: none;
+  transition: top 0.1s;
+}
+.skip-to-content:focus {
+  top: 0;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   SILICON VALLEY LUXURY STYLES
+   Enhanced animations and utilities
+   ========================================== */
+
+/* Luxury button - Enhanced */
+.btn-accent-luxury {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #A61E2E 0%, #8B1826 100%);
+  color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(166, 30, 46, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.btn-accent-luxury::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 20%;
+  height: 200%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: rotate(30deg);
+  transition: all 0.6s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.btn-accent-luxury:hover::after {
+  left: 120%;
+}
+
+.btn-accent-luxury:hover {
+  background: linear-gradient(135deg, #8B1826 0%, #6D1220 100%);
+  box-shadow: 0 8px 28px rgba(166, 30, 46, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.btn-accent-luxury:active {
+  transform: translateY(0);
+}
+
+/* Auto-shimmer for hero CTA — catches the eye without hover */
+@keyframes shimmer-sweep {
+  0% { left: -60%; }
+  100% { left: 120%; }
+}
+
+.btn-shimmer::after {
+  animation: shimmer-sweep 3s cubic-bezier(0.19, 1, 0.22, 1) infinite;
+  animation-delay: 1.5s;
+}
+
+/* Primary button variant */
+.btn-primary-luxury {
+  background: linear-gradient(135deg, #0E2A47 0%, #091C2E 100%);
+  color: white;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(14, 42, 71, 0.25);
+}
+
+.btn-primary-luxury:hover {
+  background: linear-gradient(135deg, #1A3D5F 0%, #0E2A47 100%);
+  box-shadow: 0 8px 28px rgba(14, 42, 71, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Card styles */
+.card-luxury {
+  background-color: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 12px rgba(14, 42, 71, 0.06);
+}
+
+.card-luxury:hover {
+  box-shadow: 0 12px 40px rgba(14, 42, 71, 0.12);
+  transform: translateY(-4px);
+}
+
+/* ==========================================
+   ADVANCED ANIMATIONS
+   ========================================== */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(166, 30, 46, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(166, 30, 46, 0.4); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Animation utility classes */
+.animate-float { animation: float 6s ease-in-out infinite; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+.animate-slide-in-left { animation: slideInFromLeft 0.6s ease-out; }
+.animate-slide-in-right { animation: slideInFromRight 0.6s ease-out; }
+.animate-scale-in { animation: scaleIn 0.4s ease-out; }
+
+/* Gradient animation */
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}
+
+/* Staggered animation delays */
+.animate-delay-100 { animation-delay: 100ms; }
+.animate-delay-200 { animation-delay: 200ms; }
+.animate-delay-300 { animation-delay: 300ms; }
+.animate-delay-400 { animation-delay: 400ms; }
+.animate-delay-500 { animation-delay: 500ms; }
+
+/* ==========================================
+   GLASSMORPHISM ENHANCED
+   ========================================== */
+
+.glass-enhanced {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(14, 42, 71, 0.08);
+}
+
+.glass-dark-enhanced {
+  background: rgba(14, 42, 71, 0.1);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ==========================================
+   TEXT GRADIENTS
+   ========================================== */
+
+.text-gradient-primary {
+  background: linear-gradient(135deg, #0E2A47 0%, #2A5278 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-accent {
+  background: linear-gradient(135deg, #A61E2E 0%, #C4263A 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #D4A574 0%, #E8C9A8 50%, #D4A574 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ==========================================
+   RESPONSIVE TYPOGRAPHY
+   ========================================== */
+
+@media (max-width: 640px) {
+  .text-responsive-xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  .text-responsive-2xl {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+  .text-responsive-3xl {
+    font-size: 2rem;
+    line-height: 2.5rem;
+  }
+  .text-responsive-4xl {
+    font-size: 2.25rem;
+    line-height: 2.75rem;
+  }
+}
+
+/* ==========================================
+   SCROLLBAR CUSTOMIZATION
+   ========================================== */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F5F7FA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #0E2A47;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #091C2E;
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #0E2A47 #F5F7FA;
+}
+
+/* ==========================================
+   FOCUS STYLES ENHANCED
+   ========================================== */
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 42, 71, 0.2);
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  box-shadow: 0 0 0 3px rgba(166, 30, 46, 0.3);
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ==========================================
+   PRINT STYLES
+   ========================================== */
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  a[href]:after { content: " (" attr(href) ")"; }
+}

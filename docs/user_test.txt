@@ -1,0 +1,18 @@
+Domicilas2024!
+miguel.barberia@domicitas.do
+
+Email	Nombre	Rol	Negocio	Plan
+admin@domicitas.do	Carlos Rodríguez	SUPER_ADMIN	Estilo Capital	TEAM
+miguel.barberia@domicitas.do	Pedro Miguel Díaz García	ORG_ADMIN	Estilo Capital	TEAM
+ana.belleza@domicitas.do	Victoria Díaz Rodríguez	ORG_ADMIN	Salón Elegante	PROFESSIONAL
+ana.estilista@domicitas.do	Mateo Díaz Gómez	ORG_ADMIN	Salón Elegante	PROFESSIONAL
+carlos.hibrido@domicitas.do	Francisco Javier Rivera Torres	ORG_ADMIN	Estilo Total	ENTERPRISE
+maria.equipo@domicitas.do	Camila Castillo Gómez	TEAM_LEADER	Estilo Capital	PROFESSIONAL
+jose.sucursal@domicitas.do	Gabriel Luna Flores	TEAM_LEADER	Estilo Total	ENTERPRISE
+rafael.barbero@domicitas.do	Gabriel Cruz Flores	PROFESSIONAL	Estilo Capital	TEAM
+daniela.estilista@domicitas.do	Lucía Sánchez Hernández	PROFESSIONAL	Salón Elegante	PROFESSIONAL
+pedro.barbero@domicitas.do	Roberto Carlos Ramírez González	PROFESSIONAL	Estilo Capital	PROFESSIONAL
+sofia.estilista@domicitas.do	Martina Gómez Hernández	PROFESSIONAL	Salón Elegante	PROFESSIONAL
+andres.barbero@domicitas.do	Diego Alejandro Torres Díaz	PROFESSIONAL	Estilo Total	ENTERPRISE
+juan.cliente@gmail.com	Miguel Ángel Luna Cruz	CUSTOMER	Estilo Capital	TEAM
+laura.cliente@gmail.com	Emilia Rodríguez Rodríguez	CUSTOMER	Estilo Capital	PROFESSIONAL

@@ -1,0 +1,19 @@
+name: WhatsApp Health Check (hourly)
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch: {}
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger health-check
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -fsSL -X GET \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron/whatsapp-health" \
+            -w "\nHTTP %{http_code}\n"

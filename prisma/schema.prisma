@@ -1,0 +1,789 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  SOLO        // $19/mes — 1 Profesional
+  TEAM        // $39/mes — 5 Profesionales
+  BUSINESS    // $79/mes — Ilimitados, multi-sucursal
+}
+
+enum Role {
+  SUPER_ADMIN     // SaaS Owner
+  ORG_ADMIN       // Shop Owner
+  TEAM_LEADER     // Manager of a specific team/branch
+  PROFESSIONAL    // Staff member (Stylist)
+  CUSTOMER        // Registered client
+}
+
+// ==========================================
+// MULTI-NICHO SUPPORT
+// ==========================================
+
+enum ShopType {
+  BARBERSHOP      // Solo barbería
+  BEAUTY_SALON    // Solo salón de belleza
+  HYBRID          // Mixto (barbería + belleza)
+}
+
+enum ServiceType {
+  // Barbería
+  HAIRCUT
+  BEARD
+  // Belleza
+  COLOR
+  STYLING
+  FACIAL
+  // Tratamientos capilares
+  TREATMENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum WhatsAppProvider {
+  META
+  TWILIO
+}
+
+enum MetaPlatformType {
+  CLOUD_API
+  NOT_APPLICABLE
+  ON_PREMISE
+}
+
+// ==========================================
+// CORE MODELS
+// ==========================================
+
+model User {
+  id            String    @id // Supabase Auth UID
+  email         String?   @unique // Primary login identifier
+  phoneNumber   String?   @unique // Optional — WhatsApp contact
+  name          String?
+  avatarUrl     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  memberships   Membership[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  userId    String
+  shopId    String
+  teamId    String?
+  role      Role     @default(PROFESSIONAL)
+  
+  user      User     @relation(fields: [userId], references: [id])
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, shopId, teamId])
+}
+
+model Shop {
+  id                     String                 @id @default(cuid())
+  name                   String
+  address                String?
+  latitude               Float?                 // Google Places coordinates
+  longitude              Float?
+  placeId                String?                // Google Places place_id
+  phoneNumber            String?                @unique
+  whatsappNumber         String?                @unique
+  whatsappEnabled        Boolean                @default(false)
+  whatsappPhoneNumber    String?                @unique
+  whatsappPhoneNumberId  String?                @unique
+  wabaId                 String?                @unique
+  whatsappProvider       WhatsAppProvider       @default(TWILIO)
+  twilioAccountSid       String?
+  twilioAuthToken        String?
+  // Meta WhatsApp Business API (per-shop credentials)
+  metaAccessToken        String?
+  metaTokenExpiresAt     DateTime?
+  metaPhoneNumberId      String?
+  metaBusinessAccountId  String?
+  // Embedded Signup state tracking (added 2026-05-03)
+  metaPlatformType            MetaPlatformType?
+  coexistenceMode             Boolean    @default(false)
+  metaSubscribedFields        String[]   @default([])
+  whatsappReadyAt             DateTime?  // pasó a CONNECTED desde PENDING
+  whatsappLastHealthCheckAt   DateTime?
+  needsReconnect              Boolean    @default(false)
+  ownerNotificationPhone String?                // Personal number for owner notifications (E.164 format)
+
+  plan                   Plan                   @default(TEAM)
+  shopType               ShopType               @default(BARBERSHOP)
+  description            String?
+  email                  String?
+  logoUrl                String?
+  website                String?
+  // Stripe subscription fields
+  stripeId               String?                @unique
+  stripeSubscriptionId   String?                @unique
+  stripeCustomerId       String?                @unique
+  subscriptionStatus     String?                // active, past_due, canceled, incomplete, etc.
+  currentPeriodEnd       DateTime?              // Next billing date
+  trialEnd              DateTime?              // Trial period end (if applicable)
+  gracePeriodEndsAt      DateTime?              // If past_due, suspend after this date
+  // Founder program — first N shops get a permanent discount as a thank-you
+  // for joining during launch phase. The discount applies on top of Stripe
+  // billing (we apply a coupon at the customer level).
+  isFounder              Boolean                @default(false)
+  founderDiscountPct     Int                    @default(0)  // 50 = 50% off forever
+  foundedAt              DateTime?              // when they joined as a founder
+
+  // Settings
+  country                String                 @default("DO")  // ISO 3166-1 alpha-2 (DO, CO, PR, etc.)
+  timezone               String                 @default("America/Santo_Domingo")
+  currency               String                 @default("DOP")
+  language               String                 @default("es")
+  chatbotPersonality     String?                // Custom personality/system prompt for the chatbot
+  chatbotJerga           String?                // Dominican barbershop slang dictionary for the chatbot
+  chatbotModelId         String?                // AI model ID (e.g. "gpt-4.1-mini", "gemini-3-flash-preview")
+  reactivationMessage    String?                // Custom reactivation WhatsApp message template
+
+  // Google Calendar Integration
+  googleCalendarRefreshToken   String?
+  googleCalendarSyncEnabled    Boolean                @default(false)
+  googleCalendarId             String?                // Specific calendar ID (null = primary)
+  googleCalendarSyncDirection  String?                // PUSH, PULL, or BIDIRECTIONAL
+
+  // ICS Calendar Feed (Apple Calendar, Android, Outlook)
+  icsToken                     String?                @unique
+
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+
+  faq                    FAQ[]
+  services               Service[]
+  stylists               Stylist[]
+  hours                  ShopAvailability[]
+  memberships            Membership[]
+  teams                  Team[]
+  invitations            Invitation[]
+  clients                Client[]
+  appointments           Appointment[]
+  usageStats             UsageStats[]
+  locations              Location[]
+  reminderConfig         ReminderConfig?
+  loyaltyConfig          LoyaltyConfig?
+  walkIns                WalkIn[]
+  whatsappTemplates      WhatsAppTemplate[]
+  membershipPlans        MembershipPlan[]
+  clientMemberships      ClientMembership[]
+  botSchedule            BotSchedule?
+  ownerNotificationLogs  OwnerNotificationLog[]
+  chatbotPhraseCache     ChatbotPhraseCache[]
+
+  @@index([shopType])
+  @@index([plan])
+  @@index([subscriptionStatus])
+}
+
+model Team {
+  id          String       @id @default(cuid())
+  name        String
+  shopId      String
+  shop        Shop         @relation(fields: [shopId], references: [id])
+  memberships Membership[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Invitation {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  shopId    String
+  role      Role     @default(PROFESSIONAL)
+  email     String?
+  isUsed    Boolean  @default(false)
+  expiresAt DateTime?
+  
+  shop      Shop     @relation(fields: [shopId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ShopAvailability {
+  id        String   @id @default(cuid())
+  shopId    String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id])
+}
+
+model Stylist {
+  id           String         @id @default(cuid())
+  name         String
+  email        String?        @unique
+  shopId       String
+  locationId   String?        // Optional location assignment
+  userId       String?        // Link to User if they have an account
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  appointments Appointment[]
+  availability Availability[]
+  timeBlocks   TimeBlock[]
+  shop         Shop           @relation(fields: [shopId], references: [id])
+  location     Location?      @relation(fields: [locationId], references: [id])
+}
+
+model Service {
+  id           String       @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  duration     Int          // in minutes
+  bufferTime   Int          @default(0)
+  serviceType  ServiceType
+  shopId       String
+
+  // Optional flags
+  isActive     Boolean      @default(true)
+  isBookable   Boolean      @default(true)
+
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  appointments        Appointment[]
+  appointmentServices AppointmentService[]
+  loyaltyConfigs      LoyaltyConfig[]
+  shop                Shop         @relation(fields: [shopId], references: [id])
+
+  @@index([shopId, serviceType])
+}
+
+model TimeBlock {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Lunch Break"
+  type      String   
+  startTime DateTime
+  endTime   DateTime
+  stylistId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stylist   Stylist  @relation(fields: [stylistId], references: [id])
+}
+
+model Appointment {
+  id                  String             @id @default(cuid())
+  clientName          String
+  clientWhatsApp      String
+  stylistId           String
+  serviceId           String
+  shopId              String             // 🔒 SECURITY: Tenant isolation
+  locationId          String?            // Optional location
+  startTime           DateTime
+  endTime             DateTime
+  status              AppointmentStatus @default(SCHEDULED)
+  notes               String?
+
+  // Multi-cycle reminder tracking
+  reminder24hSentAt   DateTime?
+  reminder6hSentAt    DateTime?
+  reminder2hSentAt    DateTime?
+  reminder1hSentAt    DateTime?
+
+  // Payment tracking (FASE 7)
+  paidAt              DateTime?
+  paidAmount          Float?
+  paymentMethod       String?            // CASH, CARD, TRANSFER, MEMBERSHIP
+
+  // Membership/pack redemption — when set, the appointment was paid with a prepaid pack
+  clientMembershipId String?
+  clientMembership   ClientMembership? @relation(fields: [clientMembershipId], references: [id])
+
+  googleCalendarEventId String?          // Google Calendar event ID for sync
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  clientId       String?
+  client         Client?            @relation(fields: [clientId], references: [id])
+  service        Service            @relation(fields: [serviceId], references: [id])
+  stylist        Stylist            @relation(fields: [stylistId], references: [id])
+  shop           Shop               @relation(fields: [shopId], references: [id])
+  location       Location?          @relation(fields: [locationId], references: [id])
+  appointmentServices AppointmentService[]
+
+  @@index([shopId, startTime])
+  @@index([shopId, status, startTime])
+  @@index([clientId, status])
+  @@index([stylistId, startTime])
+  @@index([locationId])
+  @@index([paidAt])
+}
+
+model Client {
+  id           String        @id @default(cuid())
+  name         String?
+  phoneNumber  String        // Not unique anymore (same number can be in different shops)
+  shopId       String        // 🔒 SECURITY: Tenant isolation
+  email        String?
+  preferences  String?
+  preferredContact String?   @default("WHATSAPP")
+  isActive     Boolean       @default(true)
+  notes        String?
+  debtAmount   Float         @default(0)  // Fía/crédito pendiente de cobro
+  visitCount   Int           @default(0)  // Total confirmed visits (for loyalty tracking)
+  reactivationSentAt DateTime?             // Last time a reactivation WA message was sent
+  userId       String?       // Link to User if they register
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  appointments Appointment[]
+  chatHistory  ChatHistory[]
+  shop         Shop          @relation(fields: [shopId], references: [id])
+  memberships  ClientMembership[]
+
+  @@unique([shopId, phoneNumber])  // Unique per shop
+  @@index([shopId, phoneNumber])
+}
+
+model ChatHistory {
+  id          String   @id @default(cuid())
+  role        String
+  content     String
+  phoneNumber String
+  clientId    String?
+  shopId      String?  // For chatbot analytics
+  question    String?  // For analytics: original question
+  source      String?  // For analytics: faq_exact, faq_fuzzy, gemini
+  createdAt   DateTime @default(now())
+  client      Client?  @relation(fields: [clientId], references: [id])
+
+  @@index([shopId, createdAt])
+  @@index([shopId, question])
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  stylistId String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  stylist   Stylist  @relation(fields: [stylistId], references: [id])
+}
+
+model FAQ {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  shopId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  shop      Shop     @relation(fields: [shopId], references: [id])
+}
+
+model UsageStats {
+  id                String   @id @default(cuid())
+  shopId            String
+  month             String   // Format: "2024-02"
+  appointmentsCreated Int    @default(0)
+  whatsappMessagesSent  Int  @default(0)
+  professionalsCount   Int   @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  shop              Shop     @relation(fields: [shopId], references: [id])
+
+  @@unique([shopId, month])
+  @@index([shopId, month])
+}
+
+model Location {
+  id              String       @id @default(cuid())
+  name            String
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  placeId         String?
+  phoneNumber     String?
+  whatsappNumber  String?
+  shopId          String
+  timezone        String       @default("America/Santo_Domingo")
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  shop            Shop         @relation(fields: [shopId], references: [id])
+  stylists        Stylist[]
+  appointments    Appointment[]
+
+  @@index([shopId])
+}
+
+model ShopWhatsappSettings {
+  id                String    @id @default(cuid())
+  shopId            String    @unique
+  phoneNumber       String
+  isVerified        Boolean   @default(false)
+  verificationCode  String?
+  codeExpiresAt     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model WhatsAppConversation {
+  id              String   @id @default(cuid())
+  phoneNumber     String
+  shopId          String
+  phase           String   @default("greeting") // greeting | booking | confirming | done
+  stateJson       String   // JSON blob with ConversationState fields
+  lastActivityAt  DateTime @default(now())
+
+  // Bot/Human control
+  controlMode     String    @default("BOT")  // BOT | HUMAN | BOT_PAUSED
+  humanTookOverAt DateTime?
+  humanTakerId    String?   // userId of staff who took control (or null if via WA echo)
+  botResumesAt    DateTime? // when control auto-reverts to BOT
+  takeoverReason  String?   // 'manual_reply' | 'client_request' | 'sentiment' | 'specific_pro' | 'dashboard'
+  closedAutoReplySentAt DateTime? // last time we sent the off-hours courtesy reply (rate-limit per 24h)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([phoneNumber, shopId])
+  @@index([shopId])
+  @@index([lastActivityAt])
+  @@index([botResumesAt])
+}
+
+// ==========================================
+// FASE 2: Reminder Configuration per Shop
+// ==========================================
+
+/**
+ * System-wide log of important events — used by the admin panel to surface
+ * problems, audit changes, and trace bug reports. Cheap to write, indexed for
+ * fast filtering.
+ */
+model SystemLog {
+  id        String   @id @default(cuid())
+  type      String   // e.g. 'shop.created', 'wa.connected', 'cron.failed', 'template.rejected'
+  severity  String   @default("info") // info | warn | error
+  shopId    String?
+  userId    String?
+  message   String?  // Short human-readable summary
+  payload   String?  // JSON-stringified extra data
+  createdAt DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([severity, createdAt])
+  @@index([shopId, createdAt])
+  @@index([createdAt])
+}
+
+/**
+ * Track every LLM agent tool call. Used by the admin observability panel
+ * to surface usage, error rates, latency, drop-off in the booking funnel.
+ *
+ * Volume: ~2-4 rows per chatbot conversation. Cleanup cron deletes rows
+ * older than 30 days to keep the table fast.
+ */
+model ToolCall {
+  id            String   @id @default(cuid())
+  toolName      String   // e.g. 'find_available_slots'
+  shopId        String?
+  phoneNumber   String?  // masked or hashed if needed for privacy
+  status        String   // 'success' | 'error'
+  errorCode     String?  // e.g. 'service_not_confirmed_by_client'
+  durationMs    Int
+  inputPreview  String?  // JSON, truncated to ~500 chars
+  outputPreview String?  // JSON, truncated to ~500 chars
+  createdAt     DateTime @default(now())
+
+  @@index([toolName, createdAt])
+  @@index([shopId, createdAt])
+  @@index([status, createdAt])
+  @@index([createdAt])
+}
+
+/**
+ * Track each execution of every cron job — when, how long, what it did.
+ */
+model CronRun {
+  id            String    @id @default(cuid())
+  name          String    // 'reminders', 'walkin-notify', etc
+  startedAt     DateTime
+  finishedAt    DateTime?
+  durationMs    Int?
+  status        String    // 'success' | 'partial' | 'failed' | 'running'
+  itemsSent     Int       @default(0)
+  itemsErrors   Int       @default(0)
+  itemsDeferred Int       @default(0)
+  details       String?   // JSON details (per-cycle counts, error messages)
+  errorMessage  String?
+
+  @@index([name, startedAt])
+  @@index([status, startedAt])
+}
+
+model ReminderConfig {
+  id        String  @id @default(cuid())
+  shopId    String  @unique
+  remind24h Boolean @default(true)
+  remind6h  Boolean @default(true)
+  remind2h  Boolean @default(false)
+  remind1h  Boolean @default(false)
+
+  // Quiet hours — protect clients from late-night/early-morning pings.
+  // Times in "HH:mm" 24h format, interpreted in the shop's timezone.
+  // If start < end → window is same-day (e.g. 21:00→23:00).
+  // If start > end → window wraps midnight (e.g. 21:00→08:00, the typical case).
+  quietHoursEnabled  Boolean  @default(true)
+  quietHoursStart    String   @default("21:00")
+  quietHoursEnd      String   @default("08:00")
+  // Days of week where NO reminders go out at all (0=Sunday, 6=Saturday).
+  // Stored as JSON array of integers because Prisma SQLite doesn't support int[].
+  quietDaysJson      String   @default("[]")
+  // If true, allow 2h/1h urgent reminders to bypass quiet hours
+  // (because they fire right before the appointment, often a needed nudge).
+  allowUrgentInQuiet Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shop      Shop    @relation(fields: [shopId], references: [id])
+}
+
+// ==========================================
+// FASE 4: Multi-service per Appointment
+// ==========================================
+
+model AppointmentService {
+  id            String      @id @default(cuid())
+  appointmentId String
+  serviceId     String
+  price         Float
+  duration      Int         // minutes
+  createdAt     DateTime    @default(now())
+
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+  service       Service     @relation(fields: [serviceId], references: [id])
+
+  @@unique([appointmentId, serviceId])
+  @@index([appointmentId])
+}
+
+// ==========================================
+// FASE 6: Walk-in Queue
+// ==========================================
+
+model WalkIn {
+  id             String    @id @default(cuid())
+  shopId         String
+  clientName     String
+  serviceId      String?
+  stylistId      String?
+  whatsappNumber String?   // Para notificación automática 15 min antes
+  arrivedAt      DateTime  @default(now())
+  servedAt       DateTime?
+  estimatedEnd   DateTime? // Calculado al agregar: arrivedAt + suma de duraciones previas
+  notifiedAt     DateTime? // Cuando se envió la notificación de "15 min"
+  status         String    @default("WAITING") // WAITING | IN_PROGRESS | DONE | LEFT
+  position       Int
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  shop           Shop      @relation(fields: [shopId], references: [id])
+
+  @@index([shopId, status])
+  @@index([shopId, arrivedAt])
+}
+
+// ==========================================
+// LOYALTY PROGRAM (simple visit counter)
+// ==========================================
+
+model LoyaltyConfig {
+  id                  String   @id @default(cuid())
+  shopId              String   @unique
+  enabled             Boolean  @default(false)
+  visitsRequired      Int      @default(5)
+  rewardLabel         String   @default("un servicio gratis")  // Display name (synced from rewardService.name)
+  rewardServiceId     String?                       // FK to the reward Service
+  countMembershipVisits Boolean @default(true)      // Do bond-redeemed visits count for loyalty?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  shop                Shop     @relation(fields: [shopId], references: [id])
+  rewardService       Service? @relation(fields: [rewardServiceId], references: [id])
+}
+
+// ==========================================
+// WHATSAPP TEMPLATES (Twilio Content API / Meta Graph API)
+// ==========================================
+
+model WhatsAppTemplate {
+  id                String           @id @default(cuid())
+  shopId            String
+  shop              Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  name              String
+  language          String           @default("es")
+  category          String           // UTILITY | MARKETING | AUTHENTICATION
+  bodyText          String           // Template body with {{1}} variables
+  variables         Json?            // Default variable values {"1": "Cliente", "2": "hora"}
+
+  // Provider-specific IDs
+  twilioContentSid  String?          // Twilio HX... SID
+  metaTemplateId    String?          // Meta numeric template ID
+
+  // Approval tracking
+  provider          WhatsAppProvider @default(META)
+  status            String           @default("DRAFT") // DRAFT | PENDING | APPROVED | REJECTED | PAUSED | DEPRECATED
+  rejectionReason   String?
+
+  // Template purpose mapping
+  purpose           String?          // appointment_reminder, new_booking, walkin_notification, reactivation, etc.
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@unique([shopId, name, language])
+  @@index([shopId, purpose])
+}
+
+// ==========================================
+// OTP CODES (WhatsApp-based login)
+// ==========================================
+
+model OtpCode {
+  id           String    @id @default(cuid())
+  phoneNumber  String    // E.164 format: +18091234567
+  code         String    // 6-digit code
+  expiresAt    DateTime  @default(dbgenerated("NOW() + interval '5 minutes'"))
+  verifiedAt   DateTime?
+  attempts     Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@index([phoneNumber, expiresAt])
+}
+
+// ==========================================
+// MEMBERSHIPS / PACKS (prepaid bundles)
+// Shop-defined plans that grant N services to a client.
+// DomiCita doesn't process the payment — the shop collects offline
+// (cash, transfer, their own Stripe) and we just track the balance.
+// ==========================================
+
+model MembershipPlan {
+  id                   String              @id @default(cuid())
+  shopId               String              // 🔒 Tenant isolation
+  name                 String              // "Pack 5 Cortes"
+  description          String?
+  totalServices        Int                 // 5
+  price                Float               // RD$2000 (reference, not charged here)
+  validityDays         Int?                // null = never expires
+  applicableServiceIds String[]            @default([]) // empty = covers all services
+  active               Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  shop                 Shop                @relation(fields: [shopId], references: [id])
+  assignments          ClientMembership[]
+
+  @@index([shopId, active])
+}
+
+model ClientMembership {
+  id                String              @id @default(cuid())
+  shopId            String              // 🔒 Tenant isolation
+  clientId          String
+  planId            String
+  servicesRemaining Int
+  startedAt         DateTime            @default(now())
+  expiresAt         DateTime?
+  status            String              @default("ACTIVE") // ACTIVE | EXPIRED | EXHAUSTED | CANCELED
+  notes             String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  shop              Shop                @relation(fields: [shopId], references: [id])
+  client            Client              @relation(fields: [clientId], references: [id])
+  plan              MembershipPlan      @relation(fields: [planId], references: [id])
+  appointments      Appointment[]
+
+  @@index([shopId, status])
+  @@index([clientId, status])
+}
+
+// ==========================================
+// BOT SCHEDULE — when the chatbot is allowed to reply
+// ==========================================
+
+model BotSchedule {
+  id              String   @id @default(cuid())
+  shopId          String   @unique
+  // ALWAYS         — bot replies 24/7 (default)
+  // OFF_HOURS      — bot only replies when shop is CLOSED (per ShopAvailability)
+  // BUSINESS_HOURS — bot only replies during opening hours
+  // CUSTOM         — bot replies only inside customWindows
+  // DISABLED       — bot never replies (human-only)
+  mode            String   @default("ALWAYS")
+  // [{ day: 0-6 (Sun=0), start: 'HH:mm', end: 'HH:mm' }]
+  customWindows   Json?
+  // Optional courtesy auto-reply when bot is silenced by schedule
+  closedAutoReply String?
+  closedAutoReplyEnabled Boolean @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  shop            Shop     @relation(fields: [shopId], references: [id])
+}
+
+// ==========================================
+// OWNER NOTIFICATION LOG — dedup + audit
+// ==========================================
+model OwnerNotificationLog {
+  id        String   @id @default(cuid())
+  shopId    String
+  type      String   // new_booking | cancellation | sentiment_escalation | morning_digest | evening_digest
+  refId     String?  // appointmentId or phoneNumber for dedup
+  sentAt    DateTime @default(now())
+
+  shop      Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, type, sentAt])
+}
+
+// Cache for chatbot booking-flow phrases reescritas con la personalidad del shop.
+// Lookup key: (shopId, baseTextHash, personalityHash). When the shop changes its
+// personality, personalityHash changes and the old rows become unreachable —
+// they age out via TTL cleanup.
+model ChatbotPhraseCache {
+  id              String   @id @default(cuid())
+  shopId          String
+  baseTextHash    String   // sha1 of the base text we asked the LLM to rewrite
+  personalityHash String   // sha1 of (chatbotPersonality + chatbotJerga)
+  rewritten       String   @db.Text
+  createdAt       DateTime @default(now())
+
+  shop            Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, baseTextHash, personalityHash])
+  @@index([shopId, createdAt])
+}

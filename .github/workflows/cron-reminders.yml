@@ -1,0 +1,18 @@
+name: Cron — Appointment Reminders
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    name: Trigger reminder cron
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call reminders endpoint
+        run: |
+          curl -sf -X GET "${{ secrets.APP_URL }}/api/cron/reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -w "\nHTTP %{http_code}" || echo "Request failed"

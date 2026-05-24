@@ -1,0 +1,21 @@
+name: Cron — Expire Memberships
+
+on:
+  schedule:
+    - cron: '5 3 * * *'  # daily at 03:05 UTC (~23:05 RD)
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    name: Expire memberships past validity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Call expire memberships endpoint
+        run: |
+          curl -sf -X GET "$APP_URL/api/cron/expire-memberships" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -w "\nHTTP %{http_code}" || echo "Request failed"
