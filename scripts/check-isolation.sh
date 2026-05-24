@@ -44,6 +44,21 @@ if [ -f "$REPO_ROOT/.env.local" ]; then
   fi
 fi
 
+# 4. Stripe CLI default profile check (warning only — only blocks if iaeva profile missing)
+if command -v stripe > /dev/null 2>&1; then
+  DEFAULT_NAME=$(stripe config --list 2>/dev/null | grep -E "^display_name" | head -1 | cut -d"'" -f2 || true)
+  if echo "$DEFAULT_NAME" | grep -iE "domicita" > /dev/null; then
+    echo "⚠️  Stripe CLI default profile = '$DEFAULT_NAME' (Domicita). When using stripe commands, ALWAYS pass --project-name iaeva."
+  fi
+
+  IAEVA_NAME=$(stripe config --list --project-name iaeva 2>/dev/null | grep -E "^display_name" | head -1 | cut -d"'" -f2 || true)
+  if [ -z "$IAEVA_NAME" ]; then
+    echo "ℹ️  Stripe CLI 'iaeva' profile not configured yet. Run: stripe login --project-name iaeva"
+  else
+    echo "✅ Stripe CLI 'iaeva' profile present: '$IAEVA_NAME'"
+  fi
+fi
+
 if [ "$FAIL" -eq 1 ]; then
   echo ""
   echo "🛑 Isolation check FAILED. Do not push/deploy/migrate."
