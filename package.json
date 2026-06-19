@@ -30,7 +30,7 @@
   "dependencies": {
     "@ai-sdk/google": "^3.0.29",
     "@ai-sdk/openai": "^3.0.30",
-    "@deepgram/sdk": "^4.11.3",
+    "@deepgram/sdk": "^5.3.0",
     "@google/generative-ai": "^0.24.1",
     "@prisma/adapter-pg": "^7.4.0",
     "@prisma/client": "^7.4.0",
